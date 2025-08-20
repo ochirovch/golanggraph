@@ -1,16 +1,10 @@
 package agents
 
-import "golanggraph/pkg/tools"
-
 type AgentType string
 
 const (
 	AgentTypeReact AgentType = "react"
 )
-
-type Agent interface {
-	Invoke(config Config, messages []Message, tools []tools.Tool) string
-}
 
 type Config struct {
 	ThreadID string

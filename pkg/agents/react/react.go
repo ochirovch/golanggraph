@@ -39,7 +39,7 @@ func (r *ReactAgent) Invoke(config agents.Config,
 	return response
 }
 
-func NewAgent(prompt string, model models.Model, memory memory.Memory) agents.Agent {
+func NewAgent(prompt string, model models.Model, memory memory.Memory) agents.Invoker {
 	return &ReactAgent{
 		Model:  model,
 		Type:   agents.AgentTypeReact,
