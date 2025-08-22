@@ -1,6 +1,6 @@
 package memory
 
-import "golanggraph/pkg/agents"
+import "github.com/ochirovch/golanggraph/pkg/agents"
 
 type Memory interface {
 	Store(key string, value []agents.Message)

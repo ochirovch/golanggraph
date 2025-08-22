@@ -1,23 +1,22 @@
 package react
 
 import (
-	"golanggraph/pkg/agents"
-	"golanggraph/pkg/memory"
-	"golanggraph/pkg/models"
-	"golanggraph/pkg/tools"
+	"github.com/ochirovch/golanggraph/pkg/agents"
+	"github.com/ochirovch/golanggraph/pkg/memory"
+	"github.com/ochirovch/golanggraph/pkg/tools"
 )
 
 type ReactAgent struct {
-	Model  models.Model
+	Model  agents.Invoker
 	Type   agents.AgentType
 	Prompt string // System prompt
 	Memory memory.Memory
 }
 
 func (r *ReactAgent) Invoke(config agents.Config,
-	messages []agents.Message,
+	messages agents.Messages,
 	tools []tools.Tool,
-) string {
+) agents.Messages {
 	prompt := string(agents.RoleSystem) + ": " + r.Prompt
 	// Store the messages in memory
 	for _, msg := range messages {
@@ -29,17 +28,20 @@ func (r *ReactAgent) Invoke(config agents.Config,
 		r.Memory.Store(config.ThreadID, agents.Messages{memoryMessage})
 		prompt += "\n" + string(msg.Role) + ": " + msg.Content
 	}
-	response := r.Model.Infer(prompt)
+	response := r.Model.Invoke(agents.Config{
+		ThreadID: config.ThreadID},
+		agents.Messages{{
+			Role:    agents.RoleUser,
+			Content: prompt,
+		}},
+		nil,
+	)
 	// Store the response in memory
-	responseMessage := agents.Message{
-		Role:    agents.RoleSystem,
-		Content: response,
-	}
-	r.Memory.Store(config.ThreadID, agents.Messages{responseMessage})
+	r.Memory.Store(config.ThreadID, response)
 	return response
 }
 
-func NewAgent(prompt string, model models.Model, memory memory.Memory) agents.Invoker {
+func NewAgent(prompt string, model agents.Invoker, memory memory.Memory) agents.Invoker {
 	return &ReactAgent{
 		Model:  model,
 		Type:   agents.AgentTypeReact,

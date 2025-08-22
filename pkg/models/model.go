@@ -1,5 +1,7 @@
 package models
 
+import "github.com/ochirovch/golanggraph/pkg/agents"
+
 type AgentType string
 
 const (
@@ -7,5 +9,5 @@ const (
 )
 
 type Model interface {
-	Infer(string) string
+	Infer(agents.Messages) agents.Messages
 }

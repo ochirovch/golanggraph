@@ -2,8 +2,10 @@ package gemini
 
 import (
 	"context"
-	"golanggraph/pkg/models"
 	"log"
+
+	"github.com/ochirovch/golanggraph/pkg/agents"
+	"github.com/ochirovch/golanggraph/pkg/tools"
 
 	"google.golang.org/genai"
 )
@@ -17,26 +19,27 @@ type Gemini struct {
 	Key  string
 }
 
-func (g *Gemini) Infer(input string) string {
+func (g *Gemini) Invoke(config agents.Config, input agents.Messages, tools []tools.Tool) agents.Messages {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
+	inputText := input.Print()
 
 	result, err := client.Models.GenerateContent(
 		ctx,
 		g.Name,
-		genai.Text(input),
+		genai.Text(inputText),
 		nil,
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return result.Text()
+	return agents.Messages{{Role: agents.RoleAssistant, Content: result.Text()}}
 }
 
-func New(name, key string) models.Model {
+func New(name, key string) agents.Invoker {
 	return &Gemini{
 		Name: name,
 		Key:  key,

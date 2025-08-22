@@ -2,8 +2,9 @@ package inmemorysaver
 
 import (
 	"fmt"
-	"golanggraph/pkg/agents"
-	"golanggraph/pkg/memory"
+
+	"github.com/ochirovch/golanggraph/pkg/agents"
+	"github.com/ochirovch/golanggraph/pkg/memory"
 )
 
 type InMemorySaver struct {

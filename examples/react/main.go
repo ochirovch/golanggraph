@@ -1,11 +1,11 @@
 package main
 
 import (
-	"golanggraph/pkg/agents"
-	"golanggraph/pkg/agents/react"
-	inmemorysaver "golanggraph/pkg/memory/InMemorySaver"
-	"golanggraph/pkg/models/gemini"
-	"golanggraph/pkg/tools"
+	"github.com/ochirovch/golanggraph/pkg/agents"
+	"github.com/ochirovch/golanggraph/pkg/agents/react"
+	inmemorysaver "github.com/ochirovch/golanggraph/pkg/memory/InMemorySaver"
+	"github.com/ochirovch/golanggraph/pkg/models/gemini"
+	"github.com/ochirovch/golanggraph/pkg/tools"
 )
 
 func main() {
