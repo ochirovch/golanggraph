@@ -1,6 +1,8 @@
 package stategraph
 
 import (
+	"errors"
+
 	"github.com/ochirovch/golanggraph/pkg/agents"
 	"github.com/ochirovch/golanggraph/pkg/memory"
 	"github.com/ochirovch/golanggraph/pkg/tools"
@@ -13,6 +15,7 @@ const (
 
 type Node struct {
 	Name     string
+	LLM      agents.Invoker
 	Function NodeFunc
 }
 
@@ -24,24 +27,23 @@ type Edge struct {
 type NodeFunc func(llm agents.Invoker, messages agents.Messages) agents.Messages
 
 type StateGraph struct {
-	nodes      map[string]Node
-	edges      map[string][]string
-	nodeModels map[string]agents.Invoker
+	nodes []Node
+	edges map[string][]string
 }
 
 func New() *StateGraph {
 	return &StateGraph{
-		nodes:      make(map[string]Node),
-		nodeModels: make(map[string]agents.Invoker),
+		nodes: make([]Node, 0),
+		edges: make(map[string][]string),
 	}
 }
 
-func (g *StateGraph) AddNode(node string, handler agents.Invoker, fn NodeFunc) {
-	g.nodes[node] = Node{
-		Name:     node,
+func (g *StateGraph) AddNode(name string, llm agents.Invoker, fn NodeFunc) {
+	g.nodes = append(g.nodes, Node{
+		Name:     name,
+		LLM:      llm,
 		Function: fn,
-	}
-	g.nodeModels[node] = handler
+	})
 }
 
 func (g *StateGraph) AddEdge(from, to string) {
@@ -52,11 +54,39 @@ func (g *StateGraph) Compile(checkPointer *memory.Memory) Graph {
 	// Logic to compile the graph state
 	return Graph{
 		checkPointer: checkPointer,
-		graph:        g.nodes,
-		nodeModels:   g.nodeModels,
+		nodes:        g.nodes,
+		edges:        g.edges,
 		currentNode:  string(EdgeStart)}
 }
 
-func (g Graph) Invoke(config agents.Config, messages agents.Messages, tools []tools.Tool) string {
-	return ""
+const (
+	errEdgeReached        = "cannot invoke graph: reached end"
+	errMultipleEdgesFound = "multiple edges found, cannot determine next node"
+	errBrokenGraph        = "cannot invoke graph: broken edge"
+)
+
+func (g Graph) Invoke(config agents.Config, messages agents.Messages, tools []tools.Tool) (agents.Messages, error) {
+
+	currentNodeEdges := g.edges[g.currentNode]
+	if len(currentNodeEdges) == 0 {
+		return agents.Messages{}, errors.New(errEdgeReached)
+	}
+	if len(currentNodeEdges) > 1 {
+		return agents.Messages{}, errors.New(errMultipleEdgesFound)
+	}
+	var nextNode *Node
+	for _, node := range g.nodes {
+		if node.Name == currentNodeEdges[0] {
+			nextNode = &node
+			break
+		}
+	}
+	if nextNode == nil {
+		return agents.Messages{}, errors.New(errBrokenGraph)
+	}
+	if nextNode.Name == string(EdgeEnd) {
+		return agents.Messages{}, errors.New(errEdgeReached)
+	}
+	response := nextNode.Function(nextNode.LLM, messages)
+	return response, nil
 }
