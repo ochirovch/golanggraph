@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/ochirovch/golanggraph/pkg/agents"
@@ -26,8 +28,13 @@ func main() {
 	graph := graphBuilder.Compile(&memory)
 	for {
 		var userInput string
-		fmt.Scanln(&userInput)
-		fmt.Println("You:", userInput)
+		// ask the user for input
+		scanner := bufio.NewScanner(os.Stdin)
+		if scanner.Scan() {
+			userInput = scanner.Text()
+		}
+
+		// process user input
 		switch strings.ToLower(userInput) {
 		case "quit", "exit", "q":
 			return

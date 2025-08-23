@@ -1,8 +1,6 @@
 package inmemorysaver
 
 import (
-	"fmt"
-
 	"github.com/ochirovch/golanggraph/pkg/agents"
 	"github.com/ochirovch/golanggraph/pkg/memory"
 )
@@ -25,5 +23,5 @@ func (s *InMemorySaver) Retrieve(key string) ([]agents.Message, error) {
 	if value, exists := s.store[key]; exists {
 		return value, nil
 	}
-	return nil, fmt.Errorf("no messages found for key: %s", key)
+	return []agents.Message{}, nil
 }
