@@ -87,6 +87,21 @@ func (g Graph) Invoke(config agents.Config, messages agents.Messages, tools []to
 	if nextNode.Name == string(EdgeEnd) {
 		return agents.Messages{}, errors.New(errEdgeReached)
 	}
-	response := nextNode.Function(nextNode.LLM, messages)
-	return response, nil
+	hasMemory := g.checkPointer != nil
+	var checkPointer memory.Memory
+	var messagesToCall agents.Messages
+	if hasMemory {
+		checkPointer = *g.checkPointer
+		oldMessages, err := checkPointer.Retrieve(config.ThreadID)
+		if err != nil {
+			return agents.Messages{}, err
+		}
+		messagesToCall = append(messagesToCall, oldMessages...)
+	}
+	responseMessage := nextNode.Function(nextNode.LLM, append(messagesToCall, messages...))
+
+	if hasMemory {
+		checkPointer.Store(config.ThreadID, responseMessage)
+	}
+	return responseMessage, nil
 }

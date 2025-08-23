@@ -24,7 +24,6 @@ func main() {
 	graphBuilder.AddEdge("chatbot", stategraph.EdgeEnd)
 	memory := inmemorysaver.New()
 	graph := graphBuilder.Compile(&memory)
-
 	for {
 		var userInput string
 		fmt.Scanln(&userInput)
