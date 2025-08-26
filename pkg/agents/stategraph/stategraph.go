@@ -2,6 +2,7 @@ package stategraph
 
 import (
 	"errors"
+	"maps"
 
 	"github.com/ochirovch/golanggraph/pkg/agents"
 	"github.com/ochirovch/golanggraph/pkg/memory"
@@ -24,7 +25,8 @@ type Edge struct {
 	To   string
 }
 
-type NodeFunc func(llm agents.Invoker, messages agents.Messages) agents.Messages
+type NodeFunc func(llm agents.Invoker, messages agents.Messages) (
+	retMessages agents.Messages, data map[string]any)
 
 type StateGraph struct {
 	nodes []Node
@@ -98,10 +100,10 @@ func (g Graph) Invoke(config agents.Config, messages agents.Messages, tools []to
 		}
 		messagesToCall = append(messagesToCall, oldMessages...)
 	}
-	responseMessage := nextNode.Function(nextNode.LLM, append(messagesToCall, messages...))
-
+	responseMessages, data := nextNode.Function(nextNode.LLM, append(messagesToCall, messages...))
+	maps.Copy(g.data, data)
 	if hasMemory {
-		checkPointer.Store(config.ThreadID, responseMessage)
+		checkPointer.Store(config.ThreadID, responseMessages)
 	}
-	return responseMessage, nil
+	return responseMessages, nil
 }

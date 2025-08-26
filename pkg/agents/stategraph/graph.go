@@ -9,4 +9,5 @@ type Graph struct {
 	nodes        []Node
 	edges        map[string][]string
 	currentNode  string
+	data         map[string]any
 }
