@@ -2,10 +2,18 @@ package agents
 
 import "fmt"
 
+type ToolCall struct {
+	Name string
+	Args map[string]any
+	ID   string
+	Type string
+}
+
 type Messages []Message
 type Message struct {
-	Role    Role
-	Content string
+	Role      Role
+	Content   string
+	ToolCalls []ToolCall
 }
 
 func (m Messages) Print() string {
