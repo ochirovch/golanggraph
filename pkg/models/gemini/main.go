@@ -15,11 +15,12 @@ const (
 )
 
 type Gemini struct {
-	Name string
-	Key  string
+	Name  string
+	Key   string
+	Tools []tools.Tool
 }
 
-func (g *Gemini) Invoke(config agents.Config, input agents.Messages, tools []tools.Tool) agents.Messages {
+func (g *Gemini) Invoke(config agents.Config, input agents.Messages) agents.Messages {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, nil)
 	if err != nil {
@@ -37,6 +38,11 @@ func (g *Gemini) Invoke(config agents.Config, input agents.Messages, tools []too
 		log.Fatal(err)
 	}
 	return agents.Messages{{Role: agents.RoleAssistant, Content: result.Text()}}
+}
+
+func (g *Gemini) BindTools(tools []tools.Tool) {
+	// Bind tools to the Gemini instance
+	g.Tools = tools
 }
 
 func New(name, key string) agents.Invoker {

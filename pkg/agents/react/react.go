@@ -13,9 +13,12 @@ type ReactAgent struct {
 	Memory memory.Memory
 }
 
+func (r *ReactAgent) BindTools(tools []tools.Tool) {
+	r.Model.BindTools(tools)
+}
+
 func (r *ReactAgent) Invoke(config agents.Config,
 	messages agents.Messages,
-	tools []tools.Tool,
 ) agents.Messages {
 	prompt := string(agents.RoleSystem) + ": " + r.Prompt
 	// Store the messages in memory
@@ -34,7 +37,6 @@ func (r *ReactAgent) Invoke(config agents.Config,
 			Role:    agents.RoleUser,
 			Content: prompt,
 		}},
-		nil,
 	)
 	// Store the response in memory
 	r.Memory.Store(config.ThreadID, response)

@@ -5,7 +5,6 @@ import (
 	"github.com/ochirovch/golanggraph/pkg/agents/react"
 	inmemorysaver "github.com/ochirovch/golanggraph/pkg/memory/InMemorySaver"
 	"github.com/ochirovch/golanggraph/pkg/models/gemini"
-	"github.com/ochirovch/golanggraph/pkg/tools"
 )
 
 func main() {
@@ -22,7 +21,6 @@ func main() {
 		[]agents.Message{
 			{Role: agents.RoleUser, Content: "Hello, how are you?"},
 		},
-		[]tools.Tool{},
 	)
 
 	// Print the response

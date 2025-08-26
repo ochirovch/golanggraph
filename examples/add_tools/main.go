@@ -11,12 +11,12 @@ import (
 )
 
 func chatbot(llm agents.Invoker, messages agents.Messages) (agents.Messages, map[string]any) {
-	retMessages := llm.Invoke(agents.Config{}, messages, nil)
+	retMessages := llm.Invoke(agents.Config{}, messages)
 	return retMessages, nil
 }
 
 func tool_node(llm agents.Invoker, messages agents.Messages) (agents.Messages, map[string]any) {
-	retMessages := llm.Invoke(agents.Config{}, messages, nil)
+	retMessages := llm.Invoke(agents.Config{}, messages)
 	return retMessages, nil
 }
 
