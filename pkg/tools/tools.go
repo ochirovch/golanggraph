@@ -1,3 +1,3 @@
 package tools
 
-type Tool func(map[string]interface{}) (map[string]interface{}, error)
+type Tool func(map[string]any) (map[string]any, error)

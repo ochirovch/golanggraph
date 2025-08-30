@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/ochirovch/golanggraph/pkg/agents"
@@ -15,16 +16,33 @@ func chatbot(llm agents.Invoker, messages agents.Messages) (agents.Messages, map
 	return retMessages, nil
 }
 
-func tool_node(llm agents.Invoker, messages agents.Messages) (agents.Messages, map[string]any) {
-	retMessages := llm.Invoke(agents.Config{}, messages)
-	return retMessages, nil
+// used when you need to add two numbers
+func Add(inputs map[string]any) (map[string]any, error) {
+	a, ok1 := inputs["a"].(int)
+	b, ok2 := inputs["b"].(int)
+	if !ok1 || !ok2 {
+		return nil, errors.New("invalid input types")
+	}
+	result := a + b
+	return map[string]any{"result": result}, nil
+}
+
+// used when you need to multiply two numbers
+func Multiply(inputs map[string]any) (map[string]any, error) {
+	a, ok1 := inputs["a"].(int)
+	b, ok2 := inputs["b"].(int)
+	if !ok1 || !ok2 {
+		return nil, errors.New("invalid input types")
+	}
+	result := a * b
+	return map[string]any{"result": result}, nil
 }
 
 func main() {
 	graphBuilder := stategraph.New()
 	llm := gemini.New(gemini.Gemini2_5_Flash, "key")
+	llm.BindTools([]tools.Tool{Add, Multiply})
 	graphBuilder.AddNode("chatbot", llm, chatbot)
-	graphBuilder.AddNode("tool", llm, tool_node)
 	graphBuilder.AddEdge(stategraph.EdgeStart, "chatbot")
 	graphBuilder.AddEdge("chatbot", stategraph.EdgeEnd)
 	memory := inmemorysaver.New()
