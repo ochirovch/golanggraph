@@ -17,6 +17,8 @@ func chatbot(llm agents.Invoker, messages agents.Messages) (agents.Messages, map
 }
 
 // used when you need to add two numbers
+// where is a is the first number and b is the second number
+// the result will be the sum of a and b
 func Add(inputs map[string]any) (map[string]any, error) {
 	a, ok1 := inputs["a"].(int)
 	b, ok2 := inputs["b"].(int)
@@ -28,6 +30,8 @@ func Add(inputs map[string]any) (map[string]any, error) {
 }
 
 // used when you need to multiply two numbers
+// where is a is the first number and b is the second number
+// the result will be the product of a and b
 func Multiply(inputs map[string]any) (map[string]any, error) {
 	a, ok1 := inputs["a"].(int)
 	b, ok2 := inputs["b"].(int)
@@ -46,7 +50,7 @@ func main() {
 	graphBuilder.AddEdge(stategraph.EdgeStart, "chatbot")
 	graphBuilder.AddEdge("chatbot", stategraph.EdgeEnd)
 	memory := inmemorysaver.New()
-	graph := graphBuilder.Compile(&memory)
+	graph, err := graphBuilder.Compile(&memory)
 	response, err := graph.Invoke(agents.Config{
 		ThreadID: "thread-1",
 	}, agents.Messages{

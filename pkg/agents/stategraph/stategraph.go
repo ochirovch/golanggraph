@@ -1,6 +1,8 @@
 package stategraph
 
 import (
+	"errors"
+
 	"github.com/ochirovch/golanggraph/pkg/agents"
 	"github.com/ochirovch/golanggraph/pkg/memory"
 )
@@ -48,13 +50,17 @@ func (g *StateGraph) AddEdge(from, to string) {
 	g.edges[from] = append(g.edges[from], to)
 }
 
-func (g *StateGraph) Compile(checkPointer *memory.Memory) Graph {
+func (g *StateGraph) Compile(checkPointer *memory.Memory) (Graph, error) {
+	if len(g.nodes) == 0 {
+		return Graph{}, errors.New("no nodes in graph")
+	}
 	// Logic to compile the graph state
 	return Graph{
 		checkPointer: checkPointer,
 		nodes:        g.nodes,
 		edges:        g.edges,
-		currentNode:  string(EdgeStart)}
+		currentNode:  g.nodes[0],
+	}, nil
 }
 
 const (

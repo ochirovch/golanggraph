@@ -25,7 +25,11 @@ func main() {
 	graphBuilder.AddEdge(stategraph.EdgeStart, "chatbot")
 	graphBuilder.AddEdge("chatbot", stategraph.EdgeEnd)
 	memory := inmemorysaver.New()
-	graph := graphBuilder.Compile(&memory)
+	graph, err := graphBuilder.Compile(&memory)
+	if err != nil {
+		fmt.Println("Error compiling graph:", err)
+		return
+	}
 	for {
 		var userInput string
 		// ask the user for input

@@ -13,18 +13,17 @@ type Graph struct {
 	checkPointer *memory.Memory
 	nodes        []Node
 	edges        map[string][]string
-	currentNode  string
+	currentNode  Node
 	data         map[string]any
 }
 
-func (g Graph) Invoke(config agents.Config, messages agents.Messages, tools []tools.Tool) (agents.Messages, error) {
-
-	currentNodeEdges := g.edges[g.currentNode]
+func (g *Graph) calculateCurrentNode() error {
+	currentNodeEdges := g.edges[g.currentNode.Name]
 	if len(currentNodeEdges) == 0 {
-		return agents.Messages{}, errors.New(errEdgeReached)
+		return errors.New(errEdgeReached)
 	}
 	if len(currentNodeEdges) > 1 {
-		return agents.Messages{}, errors.New(errMultipleEdgesFound)
+		return errors.New(errMultipleEdgesFound)
 	}
 	var nextNode *Node
 	for _, node := range g.nodes {
@@ -34,26 +33,55 @@ func (g Graph) Invoke(config agents.Config, messages agents.Messages, tools []to
 		}
 	}
 	if nextNode == nil {
-		return agents.Messages{}, errors.New(errBrokenGraph)
+		return errors.New(errBrokenGraph)
 	}
 	if nextNode.Name == string(EdgeEnd) {
-		return agents.Messages{}, errors.New(errEdgeReached)
+		return errors.New(errEdgeReached)
 	}
-	hasMemory := g.checkPointer != nil
-	var checkPointer memory.Memory
+	g.currentNode = *nextNode
+	return nil
+}
+
+func (g *Graph) prepareMessages(config agents.Config, newMessages agents.Messages) (agents.Messages, error) {
 	var messagesToCall agents.Messages
-	if hasMemory {
-		checkPointer = *g.checkPointer
+	if g.hasMemory() {
+		checkPointer := *g.checkPointer
 		oldMessages, err := checkPointer.Retrieve(config.ThreadID)
 		if err != nil {
 			return agents.Messages{}, err
 		}
 		messagesToCall = append(messagesToCall, oldMessages...)
+		return messagesToCall, nil
 	}
-	responseMessages, data := nextNode.Function(nextNode.LLM, append(messagesToCall, messages...))
-	maps.Copy(g.data, data)
-	if hasMemory {
-		checkPointer.Store(config.ThreadID, responseMessages)
+	return newMessages, nil
+}
+
+func (g Graph) hasMemory() bool {
+	return g.checkPointer != nil
+}
+
+func (g *Graph) Store(threadID string, messages agents.Messages, data map[string]any) {
+	if g.hasMemory() {
+		checkPointer := *g.checkPointer
+		checkPointer.Store(threadID, messages)
+
+		copiedData := make(map[string]any)
+		maps.Copy(copiedData, g.data)
+		checkPointer.StoreData(threadID, copiedData)
 	}
+}
+
+func (g *Graph) Invoke(config agents.Config, newMessages agents.Messages, tools []tools.Tool) (agents.Messages, error) {
+
+	if err := g.calculateCurrentNode(); err != nil {
+		return agents.Messages{}, err
+	}
+	messagesToCall, err := g.prepareMessages(config, newMessages)
+	if err != nil {
+		return agents.Messages{}, err
+	}
+	responseMessages, data := g.currentNode.Function(g.currentNode.LLM, messagesToCall)
+
+	g.Store(config.ThreadID, responseMessages, data)
 	return responseMessages, nil
 }

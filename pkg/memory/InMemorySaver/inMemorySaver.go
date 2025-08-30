@@ -6,7 +6,8 @@ import (
 )
 
 type InMemorySaver struct {
-	store map[string]agents.Messages
+	store     map[string]agents.Messages
+	storeData map[string]any
 }
 
 func New() memory.Memory {
@@ -17,6 +18,10 @@ func New() memory.Memory {
 
 func (s *InMemorySaver) Store(key string, value []agents.Message) {
 	s.store[key] = value
+}
+
+func (s *InMemorySaver) StoreData(key string, data map[string]any) {
+	s.storeData[key] = data
 }
 
 func (s *InMemorySaver) Retrieve(key string) ([]agents.Message, error) {
