@@ -51,6 +51,9 @@ func main() {
 	graphBuilder.AddEdge("chatbot", stategraph.EdgeEnd)
 	memory := inmemorysaver.New()
 	graph, err := graphBuilder.Compile(&memory)
+	if err != nil {
+		panic(err)
+	}
 	response, err := graph.Invoke(agents.Config{
 		ThreadID: "thread-1",
 	}, agents.Messages{

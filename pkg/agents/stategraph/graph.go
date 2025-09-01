@@ -73,15 +73,20 @@ func (g *Graph) Store(threadID string, messages agents.Messages, data map[string
 
 func (g *Graph) Invoke(config agents.Config, newMessages agents.Messages, tools []tools.Tool) (agents.Messages, error) {
 
-	if err := g.calculateCurrentNode(); err != nil {
-		return agents.Messages{}, err
+	for {
+		if g.currentNode.Name == EdgeEnd {
+			break
+		}
+		messagesToCall, err := g.prepareMessages(config, newMessages)
+		if err != nil {
+			return agents.Messages{}, err
+		}
+		responseMessages, data := g.currentNode.Function(g.currentNode.LLM, messagesToCall)
+		g.Store(config.ThreadID, responseMessages, data)
+		if err := g.calculateCurrentNode(); err != nil {
+			return agents.Messages{}, err
+		}
 	}
-	messagesToCall, err := g.prepareMessages(config, newMessages)
-	if err != nil {
-		return agents.Messages{}, err
-	}
-	responseMessages, data := g.currentNode.Function(g.currentNode.LLM, messagesToCall)
 
-	g.Store(config.ThreadID, responseMessages, data)
-	return responseMessages, nil
+	return agents.Messages{}, nil
 }
