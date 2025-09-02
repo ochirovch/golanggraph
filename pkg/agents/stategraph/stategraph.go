@@ -50,11 +50,42 @@ func (g *StateGraph) AddEdge(from, to string) {
 	g.edges[from] = append(g.edges[from], to)
 }
 
-func (g *StateGraph) Compile(checkPointer *memory.Memory) (Graph, error) {
+func (g *StateGraph) checkGraph() error {
 	if len(g.nodes) == 0 {
-		return Graph{}, errors.New("no nodes in graph")
+		return errors.New("no nodes in graph")
 	}
-	// Logic to compile the graph state
+	if g.nodes[0].Name != EdgeStart {
+		return errors.New("graph must start with a start edge")
+	}
+	if g.nodes[len(g.nodes)-1].Name != EdgeEnd {
+		return errors.New("graph must end with an end edge")
+	}
+	for _, node := range g.nodes {
+		nodeEdges := g.edges[node.Name]
+		if len(nodeEdges) == 0 {
+			return errors.New("node " + node.Name + " has no outgoing edges")
+		}
+		for _, edge := range nodeEdges {
+			found := false
+			for _, n := range g.nodes {
+				if n.Name == edge || edge == string(EdgeEnd) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				return errors.New("edge from " + node.Name + " to " + edge + " is broken")
+			}
+		}
+	}
+
+	return nil
+}
+
+func (g *StateGraph) Compile(checkPointer *memory.Memory) (Graph, error) {
+	if err := g.checkGraph(); err != nil {
+		return Graph{}, err
+	}
 	return Graph{
 		checkPointer: checkPointer,
 		nodes:        g.nodes,
