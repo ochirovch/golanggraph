@@ -3,7 +3,7 @@ GolangGraph is a golang implementation of LangGraph ver 0.3 orchestration framew
 Goal: implement all examples from [origin](https://langchain-ai.github.io/langgraph/concepts/why-langgraph/)
 
 - [x] check the correctness of the graph when compiling
-- [ ] implementing the conditional edges
+- [X] implementing the conditional edges
 - [ ] working with tools
 - [ ] add human-in-the-loop functionality
 - [ ] drawing the graph
