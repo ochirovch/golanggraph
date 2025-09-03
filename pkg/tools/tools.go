@@ -1,3 +1,3 @@
 package tools
 
-type Tool func(map[string]any) (map[string]any, error)
+type Tool func(parameters map[string]any) (output map[string]any, err error)
