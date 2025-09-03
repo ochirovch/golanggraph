@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/ochirovch/golanggraph/pkg/agents"
+	"github.com/ochirovch/golanggraph/pkg/agents/node"
 	"github.com/ochirovch/golanggraph/pkg/memory"
 )
 
@@ -12,34 +13,20 @@ const (
 	EdgeEnd   = "end"
 )
 
-type Node struct {
-	Name     string
-	LLM      agents.Invoker
-	Function NodeFunc
-}
-
-type Edge struct {
-	From string
-	To   string
-}
-
-type NodeFunc func(llm agents.Invoker, messages agents.Messages) (
-	retMessages agents.Messages, data map[string]any)
-
 type StateGraph struct {
-	nodes []Node
+	nodes []node.Node
 	edges map[string][]string
 }
 
 func New() *StateGraph {
 	return &StateGraph{
-		nodes: make([]Node, 0),
+		nodes: make([]node.Node, 0),
 		edges: make(map[string][]string),
 	}
 }
 
-func (g *StateGraph) AddNode(name string, llm agents.Invoker, fn NodeFunc) {
-	g.nodes = append(g.nodes, Node{
+func (g *StateGraph) AddNode(name string, llm agents.Invoker, fn node.NodeFunc) {
+	g.nodes = append(g.nodes, node.Node{
 		Name:     name,
 		LLM:      llm,
 		Function: fn,

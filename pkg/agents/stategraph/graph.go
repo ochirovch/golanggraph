@@ -2,19 +2,22 @@ package stategraph
 
 import (
 	"errors"
-	"maps"
 
+	"github.com/google/uuid"
 	"github.com/ochirovch/golanggraph/pkg/agents"
+	"github.com/ochirovch/golanggraph/pkg/agents/node"
+	"github.com/ochirovch/golanggraph/pkg/agents/state"
 	"github.com/ochirovch/golanggraph/pkg/memory"
+
 	"github.com/ochirovch/golanggraph/pkg/tools"
 )
 
 type Graph struct {
 	checkPointer *memory.Memory
-	nodes        []Node
+	nodes        []node.Node
 	edges        map[string][]string
-	currentNode  Node
-	data         map[string]any
+	currentStep  int
+	currentNode  node.Node
 }
 
 func (g *Graph) calculateCurrentNode() error {
@@ -25,10 +28,10 @@ func (g *Graph) calculateCurrentNode() error {
 	if len(currentNodeEdges) > 1 {
 		return errors.New(errMultipleEdgesFound)
 	}
-	var nextNode *Node
-	for _, node := range g.nodes {
-		if node.Name == currentNodeEdges[0] {
-			nextNode = &node
+	var nextNode *node.Node
+	for _, n := range g.nodes {
+		if n.Name == currentNodeEdges[0] {
+			nextNode = &n
 			break
 		}
 	}
@@ -39,6 +42,7 @@ func (g *Graph) calculateCurrentNode() error {
 		return errors.New(errEdgeReached)
 	}
 	g.currentNode = *nextNode
+	g.currentStep++
 	return nil
 }
 
@@ -46,11 +50,13 @@ func (g *Graph) prepareMessages(config agents.Config, newMessages agents.Message
 	var messagesToCall agents.Messages
 	if g.hasMemory() {
 		checkPointer := *g.checkPointer
-		oldMessages, err := checkPointer.Retrieve(config.ThreadID)
+		oldStates, err := checkPointer.Restore(config.ThreadID)
 		if err != nil {
 			return agents.Messages{}, err
 		}
-		messagesToCall = append(messagesToCall, oldMessages...)
+		for _, state := range oldStates {
+			messagesToCall = append(messagesToCall, state.Messages...)
+		}
 		return messagesToCall, nil
 	}
 	return newMessages, nil
@@ -60,14 +66,18 @@ func (g Graph) hasMemory() bool {
 	return g.checkPointer != nil
 }
 
-func (g *Graph) Store(threadID string, messages agents.Messages, data map[string]any) {
+func (g *Graph) store(threadID string, messages agents.Messages, data map[string]any) {
+	state := state.State{
+		ThreadID:    threadID,
+		UUID:        uuid.New(),
+		Step:        g.currentStep,
+		CurrentNode: g.currentNode,
+		Messages:    messages,
+		Data:        data,
+	}
 	if g.hasMemory() {
 		checkPointer := *g.checkPointer
-		checkPointer.Store(threadID, messages)
-
-		copiedData := make(map[string]any)
-		maps.Copy(copiedData, g.data)
-		checkPointer.StoreData(threadID, copiedData)
+		checkPointer.Save(state)
 	}
 }
 
@@ -82,7 +92,7 @@ func (g *Graph) Invoke(config agents.Config, newMessages agents.Messages, tools 
 			return agents.Messages{}, err
 		}
 		responseMessages, data := g.currentNode.Function(g.currentNode.LLM, messagesToCall)
-		g.Store(config.ThreadID, responseMessages, data)
+		g.store(config.ThreadID, responseMessages, data)
 		if err := g.calculateCurrentNode(); err != nil {
 			return agents.Messages{}, err
 		}

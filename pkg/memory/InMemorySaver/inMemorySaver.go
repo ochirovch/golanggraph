@@ -1,32 +1,53 @@
 package inmemorysaver
 
 import (
+	"github.com/google/uuid"
 	"github.com/ochirovch/golanggraph/pkg/agents"
+	"github.com/ochirovch/golanggraph/pkg/agents/node"
+	"github.com/ochirovch/golanggraph/pkg/agents/state"
 	"github.com/ochirovch/golanggraph/pkg/memory"
 )
 
+type stateInfo struct {
+	uuid        uuid.UUID
+	step        int
+	currentNode node.Node
+}
+
 type InMemorySaver struct {
-	store     map[string]agents.Messages
-	storeData map[string]any
+	stateInfo map[string]stateInfo
+	store     map[uuid.UUID]agents.Messages
+	storeData map[uuid.UUID]map[string]any
 }
 
 func New() memory.Memory {
 	return &InMemorySaver{
-		store: make(map[string]agents.Messages),
+		stateInfo: make(map[string]stateInfo),
+		store:     make(map[uuid.UUID]agents.Messages),
+		storeData: make(map[uuid.UUID]map[string]any),
 	}
 }
 
-func (s *InMemorySaver) Store(key string, value []agents.Message) {
-	s.store[key] = value
-}
-
-func (s *InMemorySaver) StoreData(key string, data map[string]any) {
-	s.storeData[key] = data
-}
-
-func (s *InMemorySaver) Retrieve(key string) ([]agents.Message, error) {
-	if value, exists := s.store[key]; exists {
-		return value, nil
+func (s *InMemorySaver) Save(state state.State) {
+	s.stateInfo[state.ThreadID] = stateInfo{
+		uuid:        state.UUID,
+		step:        state.Step,
+		currentNode: state.CurrentNode,
 	}
-	return []agents.Message{}, nil
+	s.store[state.UUID] = state.Messages
+	s.storeData[state.UUID] = state.Data
+}
+
+func (s *InMemorySaver) Restore(threadID string) ([]state.State, error) {
+	if info, exists := s.stateInfo[threadID]; exists {
+		return []state.State{{
+			ThreadID:    threadID,
+			UUID:        info.uuid,
+			Step:        info.step,
+			CurrentNode: info.currentNode,
+			Messages:    s.store[info.uuid],
+			Data:        s.storeData[info.uuid],
+		}}, nil
+	}
+	return []state.State{}, nil
 }
