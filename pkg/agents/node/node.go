@@ -8,10 +8,5 @@ type Node struct {
 	Function NodeFunc
 }
 
-type Edge struct {
-	From string
-	To   string
-}
-
 type NodeFunc func(llm agents.Invoker, messages agents.Messages) (
 	retMessages agents.Messages, data map[string]any)

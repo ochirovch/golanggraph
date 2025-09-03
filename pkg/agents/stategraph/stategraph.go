@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/ochirovch/golanggraph/pkg/agents"
+	"github.com/ochirovch/golanggraph/pkg/agents/edge"
 	"github.com/ochirovch/golanggraph/pkg/agents/node"
 	"github.com/ochirovch/golanggraph/pkg/memory"
 )
@@ -13,15 +14,22 @@ const (
 	EdgeEnd   = "end"
 )
 
+type conditionalEdge struct {
+	fn      edge.ConditionalEdgeFunc
+	pathMap map[string]string
+}
+
 type StateGraph struct {
-	nodes []node.Node
-	edges map[string][]string
+	nodes    []node.Node
+	edges    map[string][]string
+	branches map[string]conditionalEdge
 }
 
 func New() *StateGraph {
 	return &StateGraph{
-		nodes: make([]node.Node, 0),
-		edges: make(map[string][]string),
+		nodes:    make([]node.Node, 0),
+		edges:    make(map[string][]string),
+		branches: make(map[string]conditionalEdge),
 	}
 }
 
@@ -37,6 +45,17 @@ func (g *StateGraph) AddEdge(from, to string) {
 	g.edges[from] = append(g.edges[from], to)
 }
 
+func (g *StateGraph) AddConditionalEdge(
+	from string,
+	fn edge.ConditionalEdgeFunc,
+	pathMap map[string]string) {
+
+	g.branches[from] = conditionalEdge{
+		fn:      fn,
+		pathMap: pathMap,
+	}
+}
+
 func (g *StateGraph) checkGraph() error {
 	if len(g.nodes) == 0 {
 		return errors.New("no nodes in graph")
@@ -47,12 +66,16 @@ func (g *StateGraph) checkGraph() error {
 	if g.nodes[len(g.nodes)-1].Name != EdgeEnd {
 		return errors.New("graph must end with an end edge")
 	}
+
+	// Check for missing branches
 	for _, node := range g.nodes {
-		nodeEdges := g.edges[node.Name]
-		if len(nodeEdges) == 0 {
+		if _, ok := g.branches[node.Name]; ok {
+			continue
+		}
+		if len(g.edges[node.Name]) == 0 {
 			return errors.New("node " + node.Name + " has no outgoing edges")
 		}
-		for _, edge := range nodeEdges {
+		for _, edge := range g.edges[node.Name] {
 			found := false
 			for _, n := range g.nodes {
 				if n.Name == edge || edge == string(EdgeEnd) {
@@ -77,6 +100,8 @@ func (g *StateGraph) Compile(checkPointer *memory.Memory) (Graph, error) {
 		checkPointer: checkPointer,
 		nodes:        g.nodes,
 		edges:        g.edges,
+		currentStep:  0,
+		branches:     g.branches,
 		currentNode:  g.nodes[0],
 	}, nil
 }

@@ -12,15 +12,22 @@ import (
 	"github.com/ochirovch/golanggraph/pkg/tools"
 )
 
+type ThreadIDStep struct {
+	ThreadID string
+	Step     int
+}
+
 type Graph struct {
 	checkPointer *memory.Memory
 	nodes        []node.Node
 	edges        map[string][]string
+	branches     map[string]conditionalEdge
+	states       map[ThreadIDStep]state.State
 	currentStep  int
 	currentNode  node.Node
 }
 
-func (g *Graph) calculateCurrentNode() error {
+func (g *Graph) calculateCurrentNode(config agents.Config) error {
 	currentNodeEdges := g.edges[g.currentNode.Name]
 	if len(currentNodeEdges) == 0 {
 		return errors.New(errEdgeReached)
@@ -36,7 +43,22 @@ func (g *Graph) calculateCurrentNode() error {
 		}
 	}
 	if nextNode == nil {
-		return errors.New(errBrokenGraph)
+		// If no next node is found, use the conditional edge function
+		conditionalNextNode := g.branches[g.currentNode.Name].fn
+		path := conditionalNextNode(g.states[ThreadIDStep{
+			ThreadID: config.ThreadID,
+			Step:     g.currentStep,
+		}])
+		nextNodeName := g.branches[g.currentNode.Name].pathMap[path]
+		for _, n := range g.nodes {
+			if n.Name == nextNodeName {
+				nextNode = &n
+				break
+			}
+		}
+		if nextNode == nil {
+			return errors.New(errBrokenGraph)
+		}
 	}
 	if nextNode.Name == string(EdgeEnd) {
 		return errors.New(errEdgeReached)
@@ -75,6 +97,10 @@ func (g *Graph) store(threadID string, messages agents.Messages, data map[string
 		Messages:    messages,
 		Data:        data,
 	}
+	g.states[ThreadIDStep{
+		ThreadID: threadID,
+		Step:     g.currentStep,
+	}] = state
 	if g.hasMemory() {
 		checkPointer := *g.checkPointer
 		checkPointer.Save(state)
@@ -93,7 +119,7 @@ func (g *Graph) Invoke(config agents.Config, newMessages agents.Messages, tools 
 		}
 		responseMessages, data := g.currentNode.Function(g.currentNode.LLM, messagesToCall)
 		g.store(config.ThreadID, responseMessages, data)
-		if err := g.calculateCurrentNode(); err != nil {
+		if err := g.calculateCurrentNode(config); err != nil {
 			return agents.Messages{}, err
 		}
 	}
