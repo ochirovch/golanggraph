@@ -45,6 +45,10 @@ func (g *Gemini) BindTools(tools []tools.Tool) {
 	g.Tools = tools
 }
 
+func (g *Gemini) GetTools() []tools.Tool {
+	return g.Tools
+}
+
 func New(name, key string) agents.Invoker {
 	return &Gemini{
 		Name: name,

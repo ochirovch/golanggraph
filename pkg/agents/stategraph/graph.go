@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/ochirovch/golanggraph/internal/godoc"
 	"github.com/ochirovch/golanggraph/pkg/agents"
 	"github.com/ochirovch/golanggraph/pkg/agents/node"
 	"github.com/ochirovch/golanggraph/pkg/agents/state"
@@ -71,6 +72,7 @@ func (g *Graph) calculateCurrentNode(config agents.Config) error {
 func (g *Graph) prepareMessages(config agents.Config, newMessages agents.Messages) (agents.Messages, error) {
 	var messagesToCall agents.Messages
 	if g.hasMemory() {
+		// get old messages from memory
 		checkPointer := *g.checkPointer
 		oldStates, err := checkPointer.Restore(config.ThreadID)
 		if err != nil {
@@ -81,7 +83,19 @@ func (g *Graph) prepareMessages(config agents.Config, newMessages agents.Message
 		}
 		return messagesToCall, nil
 	}
-	return newMessages, nil
+	// Prepare system message for choosing tools
+	nodeTools := g.currentNode.LLM.GetTools()
+	systemMessage := agents.Message{
+		Role:    agents.RoleSystem,
+		Content: "Use the following tools:",
+	}
+	for _, tool := range nodeTools {
+		funcDescription := godoc.FuncDescription(tool)
+		systemMessage.Content += "\n- " + funcDescription
+	}
+	messagesToCall = append(messagesToCall, systemMessage)
+	messagesToCall = append(messagesToCall, newMessages...)
+	return messagesToCall, nil
 }
 
 func (g Graph) hasMemory() bool {

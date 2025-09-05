@@ -4,7 +4,7 @@ Goal: implement all examples from [origin](https://langchain-ai.github.io/langgr
 
 - [x] check the correctness of the graph when compiling
 - [X] implementing the conditional edges
-- [ ] working with tools
+- [X] working with tools
 - [ ] add human-in-the-loop functionality
 - [ ] drawing the graph
 - [ ] check the examples
