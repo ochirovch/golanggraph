@@ -7,6 +7,7 @@ Goal: implement all examples from [origin](https://langchain-ai.github.io/langgr
 - [ ] working with tools
 - [ ] add human-in-the-loop functionality
 - [ ] drawing the graph
+- [ ] check the examples
 
 
 # Easy to start
