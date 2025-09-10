@@ -5,7 +5,9 @@ import (
 	"log"
 
 	"github.com/ochirovch/golanggraph/pkg/agents"
-	"github.com/ochirovch/golanggraph/pkg/tools"
+	"github.com/ochirovch/golanggraph/pkg/agents/invoker"
+	"github.com/ochirovch/golanggraph/pkg/agents/message"
+	"github.com/ochirovch/golanggraph/pkg/agents/tools"
 
 	"google.golang.org/genai"
 )
@@ -20,7 +22,7 @@ type Gemini struct {
 	Tools []tools.Tool
 }
 
-func (g *Gemini) Invoke(config agents.Config, input agents.Messages) agents.Messages {
+func (g *Gemini) Invoke(config agents.Config, input message.Messages) message.Messages {
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, nil)
 	if err != nil {
@@ -37,7 +39,7 @@ func (g *Gemini) Invoke(config agents.Config, input agents.Messages) agents.Mess
 	if err != nil {
 		log.Fatal(err)
 	}
-	return agents.Messages{{Role: agents.RoleAssistant, Content: result.Text()}}
+	return message.Messages{{Role: agents.RoleAssistant, Content: result.Text()}}
 }
 
 func (g *Gemini) BindTools(tools []tools.Tool) {
@@ -49,7 +51,7 @@ func (g *Gemini) GetTools() []tools.Tool {
 	return g.Tools
 }
 
-func New(name, key string) agents.Invoker {
+func New(name, key string) invoker.Invoker {
 	return &Gemini{
 		Name: name,
 		Key:  key,

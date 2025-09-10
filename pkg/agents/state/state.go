@@ -2,15 +2,14 @@ package state
 
 import (
 	"github.com/google/uuid"
-	"github.com/ochirovch/golanggraph/pkg/agents"
-	"github.com/ochirovch/golanggraph/pkg/agents/node"
+	"github.com/ochirovch/golanggraph/pkg/agents/message"
 )
 
 type State struct {
 	ThreadID    string
 	UUID        uuid.UUID
 	Step        int
-	CurrentNode node.Node
-	Messages    agents.Messages
+	CurrentNode string
+	Messages    message.Messages
 	Data        map[string]any
 }

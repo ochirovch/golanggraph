@@ -1,6 +1,10 @@
-package agents
+package message
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/ochirovch/golanggraph/pkg/agents"
+)
 
 type ToolCall struct {
 	Name string
@@ -11,7 +15,7 @@ type ToolCall struct {
 
 type Messages []Message
 type Message struct {
-	Role      Role
+	Role      agents.Role
 	Content   string
 	ToolCalls []ToolCall
 }

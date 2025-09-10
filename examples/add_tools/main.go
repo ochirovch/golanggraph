@@ -8,14 +8,16 @@ import (
 
 	"github.com/ochirovch/golanggraph/internal/godoc"
 	"github.com/ochirovch/golanggraph/pkg/agents"
+	"github.com/ochirovch/golanggraph/pkg/agents/invoker"
+	"github.com/ochirovch/golanggraph/pkg/agents/message"
 	"github.com/ochirovch/golanggraph/pkg/agents/state"
 	"github.com/ochirovch/golanggraph/pkg/agents/stategraph"
+	"github.com/ochirovch/golanggraph/pkg/agents/tools"
 	inmemorysaver "github.com/ochirovch/golanggraph/pkg/memory/InMemorySaver"
 	"github.com/ochirovch/golanggraph/pkg/models/gemini"
-	"github.com/ochirovch/golanggraph/pkg/tools"
 )
 
-func chatbot(llm agents.Invoker, messages agents.Messages) (agents.Messages, map[string]any) {
+func chatbot(llm invoker.Invoker, messages message.Messages) (message.Messages, map[string]any) {
 	retMessages := llm.Invoke(agents.Config{}, messages)
 	return retMessages, nil
 }
@@ -50,7 +52,7 @@ type BasicToolNode struct {
 	tools []tools.Tool
 }
 
-func (btn *BasicToolNode) Call(state state.State) (agents.Messages, error) {
+func (btn *BasicToolNode) Call(state state.State) (message.Messages, error) {
 	messages := state.Messages
 	if len(messages) == 0 {
 		return nil, errors.New("no messages found")
@@ -72,12 +74,12 @@ func (btn *BasicToolNode) Call(state state.State) (agents.Messages, error) {
 	if err != nil {
 		return nil, err
 	}
-	retMessage := agents.Message{
+	retMessage := message.Message{
 		Role:    agents.RoleTool,
 		Content: string(outputJSON),
 	}
 
-	return agents.Messages{retMessage}, nil
+	return message.Messages{retMessage}, nil
 }
 
 func NewBasicToolNode(tools []tools.Tool) *BasicToolNode {
@@ -89,6 +91,7 @@ func main() {
 	llm := gemini.New(gemini.Gemini2_5_Flash, "key")
 	llm.BindTools([]tools.Tool{Add, Multiply})
 	graphBuilder.AddNode("chatbot", llm, chatbot)
+	graphBuilder.AddToolNode("tool_node", NewBasicToolNode([]tools.Tool{Add, Multiply}))
 	graphBuilder.AddEdge(stategraph.EdgeStart, "chatbot")
 	graphBuilder.AddEdge("chatbot", stategraph.EdgeEnd)
 	memory := inmemorysaver.New()
@@ -98,7 +101,7 @@ func main() {
 	}
 	response, err := graph.Invoke(agents.Config{
 		ThreadID: "thread-1",
-	}, agents.Messages{
+	}, message.Messages{
 		{Role: agents.RoleUser, Content: "Hello, how can I use tools?"},
 	},
 		[]tools.Tool{},

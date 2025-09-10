@@ -6,11 +6,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/ochirovch/golanggraph/internal/godoc"
 	"github.com/ochirovch/golanggraph/pkg/agents"
+	"github.com/ochirovch/golanggraph/pkg/agents/message"
 	"github.com/ochirovch/golanggraph/pkg/agents/node"
 	"github.com/ochirovch/golanggraph/pkg/agents/state"
+	"github.com/ochirovch/golanggraph/pkg/agents/tools"
 	"github.com/ochirovch/golanggraph/pkg/memory"
-
-	"github.com/ochirovch/golanggraph/pkg/tools"
 )
 
 type ThreadIDStep struct {
@@ -69,14 +69,14 @@ func (g *Graph) calculateCurrentNode(config agents.Config) error {
 	return nil
 }
 
-func (g *Graph) prepareMessages(config agents.Config, newMessages agents.Messages) (agents.Messages, error) {
-	var messagesToCall agents.Messages
+func (g *Graph) prepareMessages(config agents.Config, newMessages message.Messages) (message.Messages, error) {
+	var messagesToCall message.Messages
 	if g.hasMemory() {
 		// get old messages from memory
 		checkPointer := *g.checkPointer
 		oldStates, err := checkPointer.Restore(config.ThreadID)
 		if err != nil {
-			return agents.Messages{}, err
+			return message.Messages{}, err
 		}
 		for _, state := range oldStates {
 			messagesToCall = append(messagesToCall, state.Messages...)
@@ -85,7 +85,7 @@ func (g *Graph) prepareMessages(config agents.Config, newMessages agents.Message
 	}
 	// Prepare system message for choosing tools
 	nodeTools := g.currentNode.LLM.GetTools()
-	systemMessage := agents.Message{
+	systemMessage := message.Message{
 		Role:    agents.RoleSystem,
 		Content: "Use the following tools:",
 	}
@@ -102,12 +102,12 @@ func (g Graph) hasMemory() bool {
 	return g.checkPointer != nil
 }
 
-func (g *Graph) store(threadID string, messages agents.Messages, data map[string]any) {
+func (g *Graph) store(threadID string, messages message.Messages, data map[string]any) {
 	state := state.State{
 		ThreadID:    threadID,
 		UUID:        uuid.New(),
 		Step:        g.currentStep,
-		CurrentNode: g.currentNode,
+		CurrentNode: g.currentNode.Name,
 		Messages:    messages,
 		Data:        data,
 	}
@@ -121,7 +121,7 @@ func (g *Graph) store(threadID string, messages agents.Messages, data map[string
 	}
 }
 
-func (g *Graph) Invoke(config agents.Config, newMessages agents.Messages, tools []tools.Tool) (agents.Messages, error) {
+func (g *Graph) Invoke(config agents.Config, newMessages message.Messages, tools []tools.Tool) (message.Messages, error) {
 
 	for {
 		if g.currentNode.Name == EdgeEnd {
@@ -129,14 +129,14 @@ func (g *Graph) Invoke(config agents.Config, newMessages agents.Messages, tools 
 		}
 		messagesToCall, err := g.prepareMessages(config, newMessages)
 		if err != nil {
-			return agents.Messages{}, err
+			return message.Messages{}, err
 		}
 		responseMessages, data := g.currentNode.Function(g.currentNode.LLM, messagesToCall)
 		g.store(config.ThreadID, responseMessages, data)
 		if err := g.calculateCurrentNode(config); err != nil {
-			return agents.Messages{}, err
+			return message.Messages{}, err
 		}
 	}
 
-	return agents.Messages{}, nil
+	return message.Messages{}, nil
 }

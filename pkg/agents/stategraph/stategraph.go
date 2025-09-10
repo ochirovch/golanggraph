@@ -3,8 +3,8 @@ package stategraph
 import (
 	"errors"
 
-	"github.com/ochirovch/golanggraph/pkg/agents"
 	"github.com/ochirovch/golanggraph/pkg/agents/edge"
+	"github.com/ochirovch/golanggraph/pkg/agents/invoker"
 	"github.com/ochirovch/golanggraph/pkg/agents/node"
 	"github.com/ochirovch/golanggraph/pkg/memory"
 )
@@ -33,11 +33,18 @@ func New() *StateGraph {
 	}
 }
 
-func (g *StateGraph) AddNode(name string, llm agents.Invoker, fn node.NodeFunc) {
+func (g *StateGraph) AddNode(name string, llm invoker.Invoker, fn node.NodeFunc) {
 	g.nodes = append(g.nodes, node.Node{
 		Name:     name,
 		LLM:      llm,
 		Function: fn,
+	})
+}
+
+func (g *StateGraph) AddToolNode(name string, toolNode node.NodeTool) {
+	g.nodes = append(g.nodes, node.Node{
+		Name: name,
+		Tool: toolNode,
 	})
 }
 

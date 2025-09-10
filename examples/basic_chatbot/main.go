@@ -10,10 +10,12 @@ import (
 	inmemorysaver "github.com/ochirovch/golanggraph/pkg/memory/InMemorySaver"
 	"github.com/ochirovch/golanggraph/pkg/models/gemini"
 
+	"github.com/ochirovch/golanggraph/pkg/agents/invoker"
+	"github.com/ochirovch/golanggraph/pkg/agents/message"
 	"github.com/ochirovch/golanggraph/pkg/agents/stategraph"
 )
 
-func chatbot(llm agents.Invoker, messages agents.Messages) (agents.Messages, map[string]any) {
+func chatbot(llm invoker.Invoker, messages message.Messages) (message.Messages, map[string]any) {
 	retMessages := llm.Invoke(agents.Config{}, messages)
 	return retMessages, nil
 }
@@ -43,6 +45,6 @@ func main() {
 		case "quit", "exit", "q":
 			return
 		}
-		fmt.Println(graph.Invoke(agents.Config{}, agents.Messages{{Role: agents.RoleUser, Content: userInput}}, nil))
+		fmt.Println(graph.Invoke(agents.Config{}, message.Messages{{Role: agents.RoleUser, Content: userInput}}, nil))
 	}
 }

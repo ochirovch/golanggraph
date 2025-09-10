@@ -2,8 +2,7 @@ package inmemorysaver
 
 import (
 	"github.com/google/uuid"
-	"github.com/ochirovch/golanggraph/pkg/agents"
-	"github.com/ochirovch/golanggraph/pkg/agents/node"
+	"github.com/ochirovch/golanggraph/pkg/agents/message"
 	"github.com/ochirovch/golanggraph/pkg/agents/state"
 	"github.com/ochirovch/golanggraph/pkg/memory"
 )
@@ -11,19 +10,19 @@ import (
 type stateInfo struct {
 	uuid        uuid.UUID
 	step        int
-	currentNode node.Node
+	currentNode string
 }
 
 type InMemorySaver struct {
 	stateInfo map[string]stateInfo
-	store     map[uuid.UUID]agents.Messages
+	store     map[uuid.UUID]message.Messages
 	storeData map[uuid.UUID]map[string]any
 }
 
 func New() memory.Memory {
 	return &InMemorySaver{
 		stateInfo: make(map[string]stateInfo),
-		store:     make(map[uuid.UUID]agents.Messages),
+		store:     make(map[uuid.UUID]message.Messages),
 		storeData: make(map[uuid.UUID]map[string]any),
 	}
 }
