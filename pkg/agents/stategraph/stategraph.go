@@ -33,18 +33,49 @@ func New() *StateGraph {
 	}
 }
 
-func (g *StateGraph) AddNode(name string, llm invoker.Invoker, fn node.NodeFunc) {
-	g.nodes = append(g.nodes, node.Node{
-		Name:     name,
-		LLM:      llm,
-		Function: fn,
-	})
+func (g *StateGraph) AddNode(name string, values ...any) {
+	var llm invoker.Invoker
+	var nodeValue interface{}
+	for _, v := range values {
+		switch n := v.(type) {
+		case invoker.Invoker:
+			llm = n
+		case node.NodeTool, node.NodeFunc:
+			nodeValue = n
+		}
+	}
+	switch n := nodeValue.(type) {
+	case node.NodeTool:
+		g.nodes = append(g.nodes, node.Node{
+			Name: name,
+			LLM:  nil,
+			Tool: n,
+		})
+	case node.NodeFunc:
+		if llm == nil {
+			panic("LLM is required for function nodes")
+		}
+		g.nodes = append(g.nodes, node.Node{
+			Name:     name,
+			LLM:      llm,
+			Function: n,
+		})
+	}
 }
 
 func (g *StateGraph) AddToolNode(name string, toolNode node.NodeTool) {
 	g.nodes = append(g.nodes, node.Node{
 		Name: name,
+		LLM:  nil,
 		Tool: toolNode,
+	})
+}
+
+func (g *StateGraph) AddFuncNode(name string, llm invoker.Invoker, fn node.NodeFunc) {
+	g.nodes = append(g.nodes, node.Node{
+		Name:     name,
+		LLM:      llm,
+		Function: fn,
 	})
 }
 
